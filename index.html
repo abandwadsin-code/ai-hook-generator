@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Hook Generator — Reels / TikTok</title>
+<style>
+  :root{
+    --bg:#0d0f14; --panel:#161922; --panel2:#1d212c; --line:#2a2f3d;
+    --txt:#e8eaf0; --mut:#8b91a3; --acc:#7c5cff; --acc2:#22d3ee;
+    --ok:#34d399; --warn:#fbbf24; --pill:#242938;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Sarabun",system-ui,sans-serif;background:var(--bg);color:var(--txt);line-height:1.5}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 18px 80px}
+  header{display:flex;align-items:center;gap:14px;margin-bottom:8px;flex-wrap:wrap}
+  .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:22px}
+  h1{font-size:22px;font-weight:700}
+  .sub{color:var(--mut);font-size:13px;margin:2px 0 22px}
+  .grid{display:grid;grid-template-columns:380px 1fr;gap:20px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .card h2{font-size:14px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);margin-bottom:14px}
+  label{display:block;font-size:13px;color:var(--mut);margin:14px 0 6px}
+  label:first-of-type{margin-top:0}
+  input[type=text],textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    border-radius:10px;padding:11px 12px;font-size:14px;font-family:inherit;outline:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--acc)}
+  textarea{resize:vertical;min-height:60px}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+  .preset{background:var(--pill);border:1px solid var(--line);color:var(--txt);font-size:12px;
+    padding:6px 11px;border-radius:20px;cursor:pointer;transition:.15s}
+  .preset:hover{border-color:var(--acc);color:#fff}
+  .row{display:flex;gap:10px}
+  .row>div{flex:1}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .chip{background:var(--pill);border:1px solid var(--line);color:var(--mut);font-size:12px;
+    padding:6px 12px;border-radius:8px;cursor:pointer;user-select:none}
+  .chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+  .btn{width:100%;margin-top:20px;background:linear-gradient(135deg,var(--acc),#5b3df0);color:#fff;border:none;
+    padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;transition:.15s}
+  .btn:hover{filter:brightness(1.1)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.sec{background:var(--pill);border:1px solid var(--line);margin-top:10px}
+  .out-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .out-head h2{margin:0}
+  .copyall{background:var(--pill);border:1px solid var(--line);color:var(--txt);font-size:12px;
+    padding:7px 14px;border-radius:8px;cursor:pointer}
+  .copyall:hover{border-color:var(--acc)}
+  .hook{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:10px;
+    display:flex;gap:14px;align-items:flex-start;animation:fade .35s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  .hook .txt{flex:1;font-size:15px;font-weight:500}
+  .hook .cat{display:inline-block;font-size:11px;color:var(--acc2);background:rgba(34,211,238,.1);
+    border:1px solid rgba(34,211,238,.25);padding:2px 9px;border-radius:20px;margin-bottom:7px}
+  .hook .cp{background:transparent;border:1px solid var(--line);color:var(--mut);border-radius:8px;
+    padding:6px 10px;font-size:12px;cursor:pointer;white-space:nowrap}
+  .hook .cp:hover{border-color:var(--acc);color:#fff}
+  .empty{text-align:center;color:var(--mut);padding:60px 20px;font-size:14px}
+  .empty .big{font-size:40px;margin-bottom:12px}
+  .ai-box{margin-top:16px;border-top:1px dashed var(--line);padding-top:16px}
+  .ai-box summary{cursor:pointer;font-size:13px;color:var(--mut);list-style:none}
+  .ai-box summary::-webkit-details-marker{display:none}
+  .ai-box summary:before{content:"⚙ ";color:var(--acc)}
+  .note{font-size:11px;color:var(--mut);margin-top:6px;line-height:1.5}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--ok);color:#04130c;
+    padding:11px 22px;border-radius:30px;font-size:13px;font-weight:600;opacity:0;transition:.25s;pointer-events:none}
+  .toast.show{opacity:1}
+  .badge{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--pill);border:1px solid var(--line);color:var(--mut)}
+  .badge.ai{color:var(--ok);border-color:rgba(52,211,153,.35)}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(255,255,255,.3);
+    border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-3px;margin-right:7px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .tips{font-size:12px;color:var(--mut);margin-top:18px;line-height:1.7}
+  .tips b{color:var(--txt)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🎬</div>
+    <div>
+      <h1>AI Hook Generator</h1>
+      <div style="font-size:12px;color:var(--mut)">สร้างประโยคเปิด 3 วินาทีแรก สำหรับ Reels &amp; TikTok</div>
+    </div>
+    <span class="badge" style="margin-left:auto;color:var(--acc2);border-color:rgba(34,211,238,.35)">v2.2</span>
+    <span id="modeBadge" class="badge">โหมด: สูตรสำเร็จ (ออฟไลน์)</span>
+  </header>
+  <div class="sub">กรอกข้อมูลสินค้า/หัวข้อ เลือกสไตล์ แล้วให้ระบบสร้างฮุคหลายแบบให้เลือกใช้ — เชื่อม OpenAI (ChatGPT) API เพื่อให้ AI เขียนสดได้</div>
+
+  <div class="grid">
+    <!-- INPUT -->
+    <div class="card">
+      <h2>1 · ข้อมูลตั้งต้น</h2>
+
+      <label>สินค้า / หัวข้อคลิป</label>
+      <div class="presets">
+        <span class="preset" data-p="door-swing">ประตูบานเปิดอลูมิเนียม</span>
+        <span class="preset" data-p="door-slide">ประตู-บานเลื่อนอลูมิเนียม</span>
+        <span class="preset" data-p="fence">รั้วอลูมิเนียม</span>
+        <span class="preset" data-p="batten">ระแนงรั้วอลูมิเนียม</span>
+        <span class="preset" data-p="tall">ประตู-หน้าต่างอลูมิเนียมบานสูง</span>
+        <span class="preset" data-p="slim">ประตู-หน้าต่างอลูมิเนียม Slim</span>
+        <span class="preset" data-p="panorama">PANORAMA</span>
+        <span class="preset" data-p="winsuite">WINSUITE</span>
+      </div>
+      <input type="text" id="topic" placeholder="เช่น หน้าต่างไวนิลกันเสียง รุ่น..." />
+
+      <label>กลุ่มเป้าหมาย</label>
+      <input type="text" id="audience" placeholder="เช่น เจ้าของบ้านที่กำลังรีโนเวท / ติดถนนใหญ่" />
+
+      <label>ปัญหา / สิ่งที่ลูกค้าอยากได้ (Pain / Desire)</label>
+      <textarea id="pain" placeholder="เช่น เสียงรถดังเข้าบ้าน นอนไม่หลับ / กลัวฝุ่น / งบจำกัด"></textarea>
+
+      <label>Key message — สารหลักที่อยากให้คนดูจำ</label>
+      <textarea id="keymsg" placeholder="เช่น หน้าต่างไวนิล AB&amp;W ตัดเสียงได้จริง บ้านเงียบลงทันทีที่ปิด"></textarea>
+
+      <div class="row">
+        <div>
+          <label>แพลตฟอร์ม</label>
+          <select id="platform">
+            <option value="reels">Instagram/FB Reels</option>
+            <option value="tiktok">TikTok</option>
+          </select>
+        </div>
+        <div>
+          <label>จำนวนฮุค</label>
+          <select id="count">
+            <option>8</option><option selected>12</option><option>16</option><option>20</option>
+          </select>
+        </div>
+      </div>
+
+      <label>สไตล์ / โทน (เลือกได้หลายอัน)</label>
+      <div class="chips" id="tones">
+        <span class="chip on" data-t="ตรงๆ ขายของ">ขายตรง</span>
+        <span class="chip on" data-t="เล่าเรื่อง">เล่าเรื่อง</span>
+        <span class="chip" data-t="ดราม่า สะเทือนใจ">ดราม่า</span>
+        <span class="chip" data-t="ตลก เบาสมอง">ตลก</span>
+        <span class="chip on" data-t="ให้ความรู้ จริงจัง">ให้ความรู้</span>
+        <span class="chip" data-t="ท้าทาย ขัดความเชื่อ">ขัดความเชื่อ</span>
+      </div>
+
+      <button class="btn" id="gen">⚡ สร้างฮุค</button>
+
+      <details class="ai-box">
+        <summary>โหมด AI — เชื่อม OpenAI (ChatGPT) API (เขียนสด ตรงบริบทกว่า)</summary>
+        <label>OpenAI API Key</label>
+        <input type="text" id="apikey" placeholder="sk-..." autocomplete="off" />
+        <label>โมเดล</label>
+        <select id="model">
+          <option value="gpt-4o">GPT-4o (สมดุล)</option>
+          <option value="gpt-4o-mini">GPT-4o mini (เร็ว/ถูก)</option>
+          <option value="gpt-4.1">GPT-4.1 (ดีสุด)</option>
+        </select>
+        <div class="note">คีย์เก็บไว้ในเครื่อง (localStorage) ของคุณเท่านั้น ส่งตรงไปที่ OpenAI API เท่านั้น · ถ้าเว้นว่าง ระบบจะใช้สูตรสำเร็จออฟไลน์ · หากเจอ error เรื่อง CORS ให้ใช้โหมดสูตรสำเร็จแทน</div>
+      </details>
+    </div>
+
+    <!-- OUTPUT -->
+    <div class="card">
+      <div class="out-head">
+        <h2>2 · ฮุคที่สร้างได้</h2>
+        <button class="copyall" id="copyAll" style="display:none">📋 คัดลอกทั้งหมด</button>
+      </div>
+      <div id="output">
+        <div class="empty">
+          <div class="big">✨</div>
+          กรอกข้อมูลทางซ้าย แล้วกด "สร้างฮุค"<br>ระบบจะสร้างประโยคเปิดหลายแบบให้เลือก
+        </div>
+      </div>
+      <div class="tips">
+        <b>เคล็ดลับใช้งาน:</b><br>
+        • ฮุคที่ดีต้องพูดให้จบใน 3 วินาทีแรก + มีภาพประกอบที่หยุดนิ้วได้<br>
+        • เอา 3–5 ฮุคไปทำ A/B test จริง อย่าเดาว่าอันไหนเวิร์ค<br>
+        • คู่ฮุคกับ "ภาพเปิด" ที่แรง: before/after, โคลสอัพ, การเคลื่อนไหว
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast">คัดลอกแล้ว</div>
+
+<script>
+const PRESETS = {
+  "door-swing":{topic:"ประตูบานเปิดอลูมิเนียม",audience:"เจ้าของบ้านที่กำลังสร้าง/รีโนเวท อยากได้ประตูทนทานใช้ยาว",pain:"ประตูไม้บวมโก่ง ประตูเหล็กเป็นสนิม ปิดไม่สนิท ลม-ฝุ่นรอด",key:"ประตูบานเปิดอลูมิเนียม แข็งแรง ไม่บวม ไม่ผุ ไม่เป็นสนิม ปิดสนิทกันลมกันฝุ่น"},
+  "door-slide":{topic:"ประตูบานเลื่อนอลูมิเนียม",audience:"เจ้าของบ้านที่อยากเปิดมุมมองกว้าง เชื่อมในบ้านกับสวน/ระเบียง",pain:"ประตูเก่าเลื่อนฝืด รางเป็นสนิม บานหนัก ฝุ่นเข้าง่าย",key:"ประตูบานเลื่อนอลูมิเนียม เลื่อนลื่นเบามือ รับวิวกว้าง ปิดสนิทกันฝุ่นกันเสียง"},
+  "fence":{topic:"รั้วอลูมิเนียม",audience:"เจ้าของบ้านสร้างใหม่/อยากเปลี่ยนรั้วเหล็กเดิม",pain:"รั้วเหล็กเป็นสนิม ทาสีใหม่ทุกปี ดูแลยาก ราคาบานปลาย",key:"รั้วอลูมิเนียม ไม่เป็นสนิม ไม่ต้องทาสีซ้ำ สวยทน คุ้มยาวๆ"},
+  "batten":{topic:"ระแนงรั้วอลูมิเนียม",audience:"เจ้าของบ้านสายโมเดิร์น อยากได้ความเป็นส่วนตัวแต่ยังโปร่ง",pain:"รั้วทึบอึดอัดลมไม่ผ่าน รั้วไม้ระแนงผุ ปลวกกิน ต้องซ่อมบ่อย",key:"ระแนงอลูมิเนียม บังตาได้แต่ยังโปร่งลมผ่าน ดีไซน์โมเดิร์น ไม่ผุไม่ปลวก"},
+  "tall":{topic:"ประตู-หน้าต่างอลูมิเนียมบานสูง",audience:"เจ้าของบ้าน/โครงการ ที่อยากได้บ้านโปร่ง เพดานสูง รับแสงเต็ม",pain:"บ้านทึบ มืด อับ อยากได้กระจกบานใหญ่แต่กลัวโครงไม่แข็งแรง",key:"บานสูงอลูมิเนียม รับแสงธรรมชาติเต็มที่ โครงสร้างแข็งแรง รองรับกระจกบานใหญ่"},
+  "slim":{topic:"ประตู-หน้าต่างอลูมิเนียม Slim",audience:"เจ้าของบ้านสายมินิมอล/โมเดิร์น เน้นเส้นเฟรมบางเฉียบ",pain:"เฟรมหนาบังวิว ดูเทอะทะ ไม่เข้ากับบ้านโมเดิร์น",key:"เฟรม Slim บางเฉียบ วิวโล่งสุดตา ดีไซน์มินิมอล แต่แข็งแรงเต็มร้อย"},
+  "panorama":{topic:"ระบบ PANORAMA",audience:"เจ้าของบ้านที่อยากได้วิวพาโนรามาไร้เสาขวาง",pain:"เสา-เฟรมขวางกลางวิว มองออกไปไม่สุด เสียอารมณ์",key:"ระบบ PANORAMA เปิดมุมมองกว้างไร้รอยต่อ วิวเต็มผืนไม่มีอะไรขวาง"},
+  "winsuite":{topic:"ระบบ WINSUITE",audience:"เจ้าของบ้าน/โครงการพรีเมียม ที่ต้องการระบบประตู-หน้าต่างครบวงจร",pain:"เลือกหลายแบรนด์มาผสม คุมคุณภาพยาก งานบานไม่เนียน",key:"ระบบ WINSUITE ครบจบในระบบเดียว มาตรฐานเดียวกันทั้งบ้าน เนียนทุกบาน"}
+};
+
+// ---------- Template engine (offline) ----------
+const TEMPLATES = {
+  "Curiosity / สงสัย":[
+    "สิ่งที่ไม่มีใครบอกคุณเกี่ยวกับ{TOPIC}...",
+    "{AUD}90% ทำพลาดเรื่องนี้โดยไม่รู้ตัว",
+    "ทำไม{TOPIC}ถึงเปลี่ยนทุกอย่างในบ้าน?",
+    "เรื่องนี้ผมไม่เคยบอกใคร แต่วันนี้จะเล่าให้ฟัง",
+    "หยุดก่อน! ถ้ายังไม่รู้ 3 ข้อนี้เรื่อง{TOPIC}",
+  ],
+  "Pain / จี้ปัญหา":[
+    "ถ้า{PAIN} อยู่ทุกวัน — คลิปนี้เพื่อคุณ",
+    "เบื่อไหม? {PAIN}",
+    "ทนกับ{PAIN}มากี่ปีแล้ว?",
+    "{PAIN}... ปัญหานี้แก้ได้ใน 1 วัน",
+    "เคยรู้สึกไหมว่า {PAIN} แล้วไม่รู้จะทำยังไง",
+  ],
+  "Bold claim / กล้าฟันธง":[
+    "{TOPIC} คือสิ่งเดียวที่{AUD}ควรลงทุน ปีนี้",
+    "ลืม{TOPIC}แบบเดิมไปได้เลย",
+    "นี่คือเหตุผลที่ {TOPIC} ดีกว่าที่คุณคิด 10 เท่า",
+    "พูดเลยว่า ถ้าไม่ทำแบบนี้ คุณเสียเงินฟรี",
+    "อันนี้แหละ ตัวเปลี่ยนเกมของบ้านคุณ",
+  ],
+  "Question / ตั้งคำถาม":[
+    "รู้ไหมว่า{TOPIC}ที่ดี ต้องดูอะไรบ้าง?",
+    "{AUD}เคยสงสัยไหม ทำไม{PAIN}?",
+    "จะเลือก{TOPIC}ทั้งที ดูแค่ราคาพอไหม?",
+    "ถ้าให้เลือกได้ครั้งเดียว คุณจะเลือกแบบไหน?",
+  ],
+  "Mistake / เตือนพลาด":[
+    "อย่าเพิ่งซื้อ{TOPIC} ถ้ายังไม่ดูคลิปนี้",
+    "3 ความผิดพลาดตอนเลือก{TOPIC} ที่ทำให้เสียเงินซ้ำสอง",
+    "{AUD}ส่วนใหญ่พลาดตรงนี้ แล้วมาเสียใจทีหลัง",
+    "ผมเคยพลาดเรื่องนี้มาก่อน อย่าทำตามผม",
+  ],
+  "Story / เล่าเรื่อง":[
+    "ลูกค้าคนนี้ {PAIN} มา 5 ปี จนวันที่เขาเจอ{TOPIC}",
+    "วันที่บ้านผมเปลี่ยน{TOPIC} ทุกอย่างต่างไปเลย",
+    "เริ่มจากปัญหาเล็กๆ ที่ว่า {PAIN}...",
+    "เพื่อนบ้านถามว่าทำไมบ้านเงียบขึ้น คำตอบคือ...",
+  ],
+  "Transformation / Before-After":[
+    "จาก{PAIN} → กลายเป็นบ้านในฝัน ใน 1 วัน",
+    "ก่อน vs หลัง ติด{TOPIC} ต่างกันคนละเรื่อง",
+    "ดูสิว่าบ้านเปลี่ยนไปแค่ไหน หลังเปลี่ยน{TOPIC}",
+  ],
+  "FOMO / เร่งด่วน":[
+    "{AUD}ที่ยังไม่ทำเรื่องนี้ กำลังพลาดของดี",
+    "คนรู้ทันแล้วเปลี่ยนไป{TOPIC}กันหมด คุณยังรออะไร?",
+    "อีกไม่นานคุณจะเสียดายที่ไม่ได้ดูคลิปนี้เร็วกว่านี้",
+  ],
+  "Contrarian / ขัดความเชื่อ":[
+    "ทุกคนคิดว่า{TOPIC}แพง — ความจริงตรงข้ามเลย",
+    "อย่าเชื่อที่เขาบอกว่า{PAIN}แก้ไม่ได้",
+    "ความเชื่อผิดๆ เรื่อง{TOPIC} ที่ทำให้คุณตัดสินใจพลาด",
+  ],
+  "POV / ชวนอิน":[
+    "POV: คุณเพิ่งรู้ว่า{PAIN}แก้ได้ง่ายกว่าที่คิด",
+    "POV: บ้านที่เคย{PAIN} กลายเป็นที่ที่อยากกลับมาทุกวัน",
+  ],
+  "Key message / สารหลัก":[
+    "{KEY}",
+    "ถ้าจะจำอย่างเดียวจากคลิปนี้ — {KEY}",
+    "พูดสั้นๆ เลยนะ: {KEY}",
+    "สิ่งที่อยากให้คุณรู้คือ {KEY}",
+    "{TOPIC}? สรุปให้: {KEY}",
+    "จบในประโยคเดียว — {KEY}",
+  ],
+};
+
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)]}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=(Math.random()*(i+1))|0;[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function softTopic(t){return (t||"สินค้านี้").trim()}
+function softPain(p){p=(p||"").trim();if(!p)return "ปัญหาที่กวนใจ";return p.split(/[.,\n]/)[0].trim()}
+function softAud(a){a=(a||"").trim();if(!a)return "";return a.split(/[.,\n]/)[0].trim()+" ";}
+
+function fill(tpl,d){
+  return tpl
+    .replace(/\{TOPIC\}/g,d.topic)
+    .replace(/\{PAIN\}/g,d.pain)
+    .replace(/\{AUD\}/g,d.aud)
+    .replace(/\{KEY\}/g,d.key);
+}
+
+function genOffline(){
+  const topic=softTopic(document.getElementById('topic').value);
+  const pain=softPain(document.getElementById('pain').value);
+  const aud=softAud(document.getElementById('audience').value);
+  const key=(document.getElementById('keymsg').value||"").trim();
+  const n=parseInt(document.getElementById('count').value);
+  const tones=[...document.querySelectorAll('#tones .chip.on')].map(c=>c.dataset.t);
+
+  // map selected tones -> relevant categories
+  let cats=Object.keys(TEMPLATES).filter(c=>c!=="Key message / สารหลัก");
+  if(tones.length){
+    const want=new Set();
+    if(tones.some(t=>t.includes('ขายของ'))){["Bold claim / กล้าฟันธง","FOMO / เร่งด่วน","Pain / จี้ปัญหา"].forEach(c=>want.add(c))}
+    if(tones.some(t=>t.includes('เล่าเรื่อง'))){["Story / เล่าเรื่อง","Transformation / Before-After","POV / ชวนอิน"].forEach(c=>want.add(c))}
+    if(tones.some(t=>t.includes('ดราม่า'))){["Pain / จี้ปัญหา","Story / เล่าเรื่อง","Transformation / Before-After"].forEach(c=>want.add(c))}
+    if(tones.some(t=>t.includes('ตลก'))){["POV / ชวนอิน","Contrarian / ขัดความเชื่อ","Curiosity / สงสัย"].forEach(c=>want.add(c))}
+    if(tones.some(t=>t.includes('ความรู้'))){["Question / ตั้งคำถาม","Mistake / เตือนพลาด","Curiosity / สงสัย"].forEach(c=>want.add(c))}
+    if(tones.some(t=>t.includes('ขัดความเชื่อ'))){["Contrarian / ขัดความเชื่อ","Bold claim / กล้าฟันธง","Curiosity / สงสัย"].forEach(c=>want.add(c))}
+    if(want.size)cats=[...want];
+  }
+  // if key message provided, always weave it in (added twice = higher chance)
+  if(key)cats=[...cats,"Key message / สารหลัก","Key message / สารหลัก"];
+
+  const d={topic,pain,aud,key:key||topic};
+  const out=[];const seen=new Set();
+  let guard=0;
+  while(out.length<n && guard<n*12){
+    guard++;
+    const cat=pick(cats);
+    const txt=fill(pick(TEMPLATES[cat]),d).replace(/\s+/g,' ').trim();
+    if(seen.has(txt))continue;
+    seen.add(txt);
+    out.push({cat:cat,txt});
+  }
+  return out;
+}
+
+// ---------- AI mode (OpenAI / ChatGPT API) ----------
+async function genAI(apiKey,model){
+  const topic=document.getElementById('topic').value.trim()||"สินค้านี้";
+  const audience=document.getElementById('audience').value.trim()||"ลูกค้าทั่วไป";
+  const pain=document.getElementById('pain').value.trim()||"ปัญหาที่ลูกค้าเจอ";
+  const km=document.getElementById('keymsg').value.trim();
+  const n=parseInt(document.getElementById('count').value);
+  const platform=document.getElementById('platform').value==='tiktok'?'TikTok':'Instagram/Facebook Reels';
+  const tones=[...document.querySelectorAll('#tones .chip.on')].map(c=>c.dataset.t).join(', ')||"ขายตรง";
+
+  const prompt=`คุณเป็นนักเขียน hook สาย short-form video มือฉมังของไทย เชี่ยวชาญ ${platform}
+
+สร้างประโยคเปิด (hook) สำหรับคลิปวิดีโอ ${n} แบบ สำหรับ:
+- สินค้า/หัวข้อ: ${topic}
+- กลุ่มเป้าหมาย: ${audience}
+- ปัญหา/ความต้องการของลูกค้า: ${pain}${km?`
+- Key message (สารหลักที่อยากให้คนดูจำให้ได้): ${km}`:''}
+- โทน/สไตล์ที่ต้องการ: ${tones}
+
+กติกา:
+- แต่ละ hook ต้องพูดจบได้ใน 3 วินาทีแรก สั้น กระชับ หยุดนิ้วคนดูได้
+- ภาษาพูดแบบคนไทยจริง ไม่แข็ง ไม่ขายของโจ๋งครึ่ม
+- หลากหลายมุม (สงสัย, จี้ปัญหา, ฟันธง, เล่าเรื่อง, เตือนพลาด, before-after ฯลฯ)${km?`
+- ต้องมีอย่างน้อย 3-4 hook ที่สื่อ Key message ข้างต้นชัดเจน`:''}
+- ห้ามมีคำอธิบายเพิ่ม
+
+ตอบกลับเป็น JSON เท่านั้น รูปแบบ: {"hooks":[{"cat":"ประเภทฮุคสั้นๆ","txt":"ตัวฮุค"}]}`;
+
+  const res=await fetch("https://api.openai.com/v1/chat/completions",{
+    method:"POST",
+    headers:{
+      "content-type":"application/json",
+      "authorization":"Bearer "+apiKey
+    },
+    body:JSON.stringify({
+      model:model,
+      temperature:0.9,
+      response_format:{type:"json_object"},
+      messages:[{role:"user",content:prompt}]
+    })
+  });
+  if(!res.ok){
+    const e=await res.text();
+    throw new Error("API "+res.status+": "+e.slice(0,200));
+  }
+  const data=await res.json();
+  let txt=(data.choices&&data.choices[0]&&data.choices[0].message&&data.choices[0].message.content||"").trim();
+  let parsed;
+  try{parsed=JSON.parse(txt);}
+  catch(_){const m=txt.match(/\{[\s\S]*\}|\[[\s\S]*\]/);parsed=JSON.parse(m?m[0]:'{"hooks":[]}');}
+  const arr=Array.isArray(parsed)?parsed:(parsed.hooks||parsed.data||parsed.results||[]);
+  return arr.map(x=>({cat:x.cat||"AI",txt:x.txt||x.hook||String(x)}));
+}
+
+// ---------- UI ----------
+const $=id=>document.getElementById(id);
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600)}
+
+document.querySelectorAll('.preset').forEach(p=>p.onclick=()=>{
+  const d=PRESETS[p.dataset.p];if(!d)return;
+  $('topic').value=d.topic;$('audience').value=d.audience;$('pain').value=d.pain;$('keymsg').value=d.key||"";
+  toast("ใส่ข้อมูลตัวอย่างแล้ว");
+});
+document.querySelectorAll('#tones .chip').forEach(c=>c.onclick=()=>c.classList.toggle('on'));
+
+// persist api key + model
+const savedKey=localStorage.getItem('hg_key');if(savedKey)$('apikey').value=savedKey;
+const savedModel=localStorage.getItem('hg_model');if(savedModel)$('model').value=savedModel;
+$('apikey').addEventListener('change',e=>localStorage.setItem('hg_key',e.target.value.trim()));
+$('model').addEventListener('change',e=>localStorage.setItem('hg_model',e.target.value));
+
+let lastHooks=[];
+
+function render(hooks){
+  lastHooks=hooks;
+  const o=$('output');
+  if(!hooks.length){o.innerHTML='<div class="empty"><div class="big">😕</div>สร้างไม่ได้ ลองใหม่อีกครั้ง</div>';return}
+  o.innerHTML=hooks.map((h,i)=>`
+    <div class="hook">
+      <div class="txt">
+        <span class="cat">${escapeHtml(h.cat)}</span><br>
+        ${escapeHtml(h.txt)}
+      </div>
+      <button class="cp" data-i="${i}">คัดลอก</button>
+    </div>`).join('');
+  o.querySelectorAll('.cp').forEach(b=>b.onclick=()=>{
+    navigator.clipboard.writeText(hooks[b.dataset.i].txt);toast("คัดลอกฮุคแล้ว");
+  });
+  $('copyAll').style.display='block';
+}
+function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+
+$('copyAll').onclick=()=>{
+  const txt=lastHooks.map((h,i)=>`${i+1}. [${h.cat}] ${h.txt}`).join('\n');
+  navigator.clipboard.writeText(txt);toast("คัดลอกทั้งหมดแล้ว ("+lastHooks.length+" ฮุค)");
+};
+
+$('gen').onclick=async()=>{
+  const btn=$('gen');
+  const key=$('apikey').value.trim();
+  const model=$('model').value;
+  if(!$('topic').value.trim()){toast("กรอกสินค้า/หัวข้อก่อน");$('topic').focus();return}
+
+  if(key){
+    btn.disabled=true;btn.innerHTML='<span class="spin"></span>AI กำลังเขียน...';
+    $('modeBadge').textContent='โหมด: AI ('+model.split('-').slice(0,2).join(' ')+')';
+    $('modeBadge').className='badge ai';
+    try{
+      const hooks=await genAI(key,model);
+      render(hooks);toast("AI สร้าง "+hooks.length+" ฮุค");
+    }catch(err){
+      toast("AI ผิดพลาด ใช้สูตรสำเร็จแทน");
+      console.error(err);
+      render(genOffline());
+      $('modeBadge').textContent='โหมด: สูตรสำเร็จ (AI error)';
+      $('modeBadge').className='badge';
+    }finally{btn.disabled=false;btn.innerHTML='⚡ สร้างฮุค'}
+  }else{
+    $('modeBadge').textContent='โหมด: สูตรสำเร็จ (ออฟไลน์)';
+    $('modeBadge').className='badge';
+    render(genOffline());
+    toast("สร้างฮุคแล้ว");
+  }
+};
+</script>
+</body>
+</html>
