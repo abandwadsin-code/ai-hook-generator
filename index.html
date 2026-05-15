@@ -73,9 +73,29 @@
   @keyframes sp{to{transform:rotate(360deg)}}
   .tips{font-size:12px;color:var(--mut);margin-top:18px;line-height:1.7}
   .tips b{color:var(--txt)}
+  .gate{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px}
+  .gate-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:34px 30px;width:100%;max-width:360px;text-align:center}
+  .gate-card .glogo{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,var(--acc),var(--acc2));display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 16px}
+  .gate-card h2{font-size:18px;margin-bottom:6px}
+  .gate-card p{font-size:13px;color:var(--mut);margin-bottom:20px}
+  .gate-card input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:13px;font-size:15px;text-align:center;letter-spacing:2px;outline:none}
+  .gate-card input:focus{border-color:var(--acc)}
+  .gate-card button{width:100%;margin-top:14px;background:linear-gradient(135deg,var(--acc),#5b3df0);color:#fff;border:none;padding:13px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
+  .gate-card button:disabled{opacity:.5;cursor:not-allowed}
+  .gate-err{color:#f87171;font-size:13px;margin-top:12px;min-height:18px}
 </style>
 </head>
 <body>
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <div class="glogo">🔒</div>
+    <h2>ใส่รหัสเข้าใช้งาน</h2>
+    <p>เครื่องมือนี้สำหรับทีมภายในเท่านั้น<br>กรุณากรอกรหัสที่ได้รับ</p>
+    <input type="password" id="gateCode" placeholder="• • • •" autocomplete="off" />
+    <button id="gateBtn">เข้าใช้งาน</button>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
 <div class="wrap">
   <header>
     <div class="logo">🎬</div>
@@ -83,7 +103,7 @@
       <h1>AI Hook Generator</h1>
       <div style="font-size:12px;color:var(--mut)">สร้างประโยคเปิด 3 วินาทีแรก สำหรับ Reels &amp; TikTok</div>
     </div>
-    <span class="badge" style="margin-left:auto;color:var(--acc2);border-color:rgba(34,211,238,.35)">v3.0</span>
+    <span class="badge" style="margin-left:auto;color:var(--acc2);border-color:rgba(34,211,238,.35)">v3.1</span>
     <span id="modeBadge" class="badge">โหมด: สูตรสำเร็จ (ออฟไลน์)</span>
   </header>
   <div class="sub">กรอกข้อมูลสินค้า/หัวข้อ เลือกสไตล์ แล้วให้ระบบสร้างฮุคหลายแบบให้เลือกใช้ — เชื่อม OpenAI (ChatGPT) API เพื่อให้ AI เขียนสดได้</div>
@@ -348,12 +368,18 @@ async function genAI(model){
     method:"POST",
     headers:{"content-type":"application/json"},
     body:JSON.stringify({
+      code:localStorage.getItem('hg_code')||'',
       model:model,
       temperature:0.9,
       response_format:{type:"json_object"},
       messages:[{role:"user",content:prompt}]
     })
   });
+  if(res.status===403){
+    localStorage.removeItem('hg_code');
+    showGate("รหัสไม่ถูกต้องหรือหมดอายุ กรุณาใส่รหัสใหม่");
+    throw new Error("invalid_code");
+  }
   if(!res.ok){
     const e=await res.text();
     throw new Error("API "+res.status+": "+e.slice(0,200));
@@ -370,6 +396,42 @@ async function genAI(model){
 // ---------- UI ----------
 const $=id=>document.getElementById(id);
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600)}
+
+// ---------- Access-code gate ----------
+function showGate(msg){
+  $('gate').style.display='flex';
+  $('gateErr').textContent=msg||'';
+  $('gateCode').value='';
+  setTimeout(()=>$('gateCode').focus(),50);
+}
+function hideGate(){$('gate').style.display='none'}
+
+async function submitGate(){
+  const code=$('gateCode').value.trim();
+  if(!code){$('gateErr').textContent='กรุณากรอกรหัส';return}
+  const b=$('gateBtn');b.disabled=true;b.textContent='กำลังตรวจสอบ...';
+  $('gateErr').textContent='';
+  try{
+    const r=await fetch(WORKER_URL,{
+      method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({code:code,validate:true})
+    });
+    if(r.status===200){
+      localStorage.setItem('hg_code',code);
+      hideGate();
+    }else if(r.status===403){
+      $('gateErr').textContent='รหัสไม่ถูกต้อง';
+    }else{
+      $('gateErr').textContent='ตรวจสอบไม่สำเร็จ ลองใหม่อีกครั้ง';
+    }
+  }catch(e){
+    $('gateErr').textContent='เชื่อมต่อไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่';
+  }finally{b.disabled=false;b.textContent='เข้าใช้งาน'}
+}
+$('gateBtn').onclick=submitGate;
+$('gateCode').addEventListener('keydown',e=>{if(e.key==='Enter')submitGate()});
+// remembered code? let them in optimistically (re-checked on first AI call)
+if(localStorage.getItem('hg_code')){hideGate()}else{showGate()}
 
 document.querySelectorAll('.preset').forEach(p=>p.onclick=()=>{
   const d=PRESETS[p.dataset.p];if(!d)return;
