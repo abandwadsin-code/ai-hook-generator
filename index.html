@@ -83,7 +83,7 @@
       <h1>AI Hook Generator</h1>
       <div style="font-size:12px;color:var(--mut)">สร้างประโยคเปิด 3 วินาทีแรก สำหรับ Reels &amp; TikTok</div>
     </div>
-    <span class="badge" style="margin-left:auto;color:var(--acc2);border-color:rgba(34,211,238,.35)">v2.2</span>
+    <span class="badge" style="margin-left:auto;color:var(--acc2);border-color:rgba(34,211,238,.35)">v3.0</span>
     <span id="modeBadge" class="badge">โหมด: สูตรสำเร็จ (ออฟไลน์)</span>
   </header>
   <div class="sub">กรอกข้อมูลสินค้า/หัวข้อ เลือกสไตล์ แล้วให้ระบบสร้างฮุคหลายแบบให้เลือกใช้ — เชื่อม OpenAI (ChatGPT) API เพื่อให้ AI เขียนสดได้</div>
@@ -143,18 +143,19 @@
 
       <button class="btn" id="gen">⚡ สร้างฮุค</button>
 
-      <details class="ai-box">
-        <summary>โหมด AI — เชื่อม OpenAI (ChatGPT) API (เขียนสด ตรงบริบทกว่า)</summary>
-        <label>OpenAI API Key</label>
-        <input type="text" id="apikey" placeholder="sk-..." autocomplete="off" />
+      <div class="ai-box">
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;margin-top:18px;color:var(--txt)">
+          <input type="checkbox" id="useAI" checked style="width:auto;accent-color:var(--acc)">
+          <span>โหมด AI (ChatGPT) — ให้ AI เขียนฮุคสด ตรงบริบทกว่า</span>
+        </label>
         <label>โมเดล</label>
         <select id="model">
           <option value="gpt-4o">GPT-4o (สมดุล)</option>
           <option value="gpt-4o-mini">GPT-4o mini (เร็ว/ถูก)</option>
           <option value="gpt-4.1">GPT-4.1 (ดีสุด)</option>
         </select>
-        <div class="note">คีย์เก็บไว้ในเครื่อง (localStorage) ของคุณเท่านั้น ส่งตรงไปที่ OpenAI API เท่านั้น · ถ้าเว้นว่าง ระบบจะใช้สูตรสำเร็จออฟไลน์ · หากเจอ error เรื่อง CORS ให้ใช้โหมดสูตรสำเร็จแทน</div>
-      </details>
+        <div class="note">AI เขียนผ่านเซิร์ฟเวอร์กลางที่ปลอดภัย — ผู้ใช้ไม่ต้องมี API key · ถ้า AI ขัดข้องระบบจะใช้สูตรสำเร็จออฟไลน์ให้อัตโนมัติ · เอาเครื่องหมายถูกออก = ใช้สูตรสำเร็จล้วน</div>
+      </div>
     </div>
 
     <!-- OUTPUT -->
@@ -314,8 +315,9 @@ function genOffline(){
   return out;
 }
 
-// ---------- AI mode (OpenAI / ChatGPT API) ----------
-async function genAI(apiKey,model){
+// ---------- AI mode (via secure Cloudflare proxy) ----------
+const WORKER_URL="https://hook-proxy.abandwads-in.workers.dev";
+async function genAI(model){
   const topic=document.getElementById('topic').value.trim()||"สินค้านี้";
   const audience=document.getElementById('audience').value.trim()||"ลูกค้าทั่วไป";
   const pain=document.getElementById('pain').value.trim()||"ปัญหาที่ลูกค้าเจอ";
@@ -342,12 +344,9 @@ async function genAI(apiKey,model){
 
 ตอบกลับเป็น JSON เท่านั้น รูปแบบ: {"hooks":[{"cat":"ประเภทฮุคสั้นๆ","txt":"ตัวฮุค"}]}`;
 
-  const res=await fetch("https://api.openai.com/v1/chat/completions",{
+  const res=await fetch(WORKER_URL,{
     method:"POST",
-    headers:{
-      "content-type":"application/json",
-      "authorization":"Bearer "+apiKey
-    },
+    headers:{"content-type":"application/json"},
     body:JSON.stringify({
       model:model,
       temperature:0.9,
@@ -379,11 +378,11 @@ document.querySelectorAll('.preset').forEach(p=>p.onclick=()=>{
 });
 document.querySelectorAll('#tones .chip').forEach(c=>c.onclick=()=>c.classList.toggle('on'));
 
-// persist api key + model
-const savedKey=localStorage.getItem('hg_key');if(savedKey)$('apikey').value=savedKey;
+// persist model + AI toggle
 const savedModel=localStorage.getItem('hg_model');if(savedModel)$('model').value=savedModel;
-$('apikey').addEventListener('change',e=>localStorage.setItem('hg_key',e.target.value.trim()));
+const savedAI=localStorage.getItem('hg_useai');if(savedAI!==null)$('useAI').checked=savedAI==='1';
 $('model').addEventListener('change',e=>localStorage.setItem('hg_model',e.target.value));
+$('useAI').addEventListener('change',e=>localStorage.setItem('hg_useai',e.target.checked?'1':'0'));
 
 let lastHooks=[];
 
@@ -413,16 +412,16 @@ $('copyAll').onclick=()=>{
 
 $('gen').onclick=async()=>{
   const btn=$('gen');
-  const key=$('apikey').value.trim();
+  const useAI=$('useAI').checked;
   const model=$('model').value;
   if(!$('topic').value.trim()){toast("กรอกสินค้า/หัวข้อก่อน");$('topic').focus();return}
 
-  if(key){
+  if(useAI){
     btn.disabled=true;btn.innerHTML='<span class="spin"></span>AI กำลังเขียน...';
     $('modeBadge').textContent='โหมด: AI ('+model.split('-').slice(0,2).join(' ')+')';
     $('modeBadge').className='badge ai';
     try{
-      const hooks=await genAI(key,model);
+      const hooks=await genAI(model);
       render(hooks);toast("AI สร้าง "+hooks.length+" ฮุค");
     }catch(err){
       toast("AI ผิดพลาด ใช้สูตรสำเร็จแทน");
